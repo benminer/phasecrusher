@@ -18,7 +18,9 @@
 /**
 */
 class PhaseCrusherAudioProcessorEditor  : public AudioProcessorEditor,
-                                          public Slider::Listener, public Button::Listener
+                                          public Slider::Listener,
+                                          public Button::Listener,
+                                          public Timer
 
 
 {
@@ -32,7 +34,9 @@ public:
     
     void sliderValueChanged(Slider *slider) override;
     void buttonClicked(Button *button) override;
-
+    
+    void timerCallback() override;
+    
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -42,6 +46,7 @@ private:
     HackAudio::Slider phaseDepthSlider;
     HackAudio::Slider phaseRateSlider;
     HackAudio::Slider bitCrushSlider;
+	HackAudio::Slider gainSlider;
     
     // On Off Switches
     HackAudio::Button phaserButton;

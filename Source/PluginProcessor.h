@@ -56,13 +56,16 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
-    float phaseRate = 0.01f;
-    float phaseDepth = 0;
-    float isPhaserOn;
-    
-    float bitCrushAmt;
-    bool isBitCrushOn;
-    
+    AudioParameterFloat* phaseRate;
+    AudioParameterFloat* phaseDepth;
+
+    AudioParameterFloat* bitCrushAmt;
+
+    AudioParameterBool* isPhaserOn;
+    AudioParameterBool* isBitCrushOn;
+	
+	AudioParameterFloat* gainMultiplier;
+
     float bitCrush (float input, float amt);
     float phase (AudioBuffer<float>& buffer, float input, float depth, float rate);
     
@@ -71,18 +74,15 @@ public:
     float Q = 2.0;
     
     void updateAngleDelta();
-    
-    
-
+	
 private:
     
     float inputSample;
     float outputSample;
     float bufferSample;
-    float gainSmooth;
-    
-    // Signal Sample Values
-    // Signal Sample Values
+	float gain = 0.0f;
+	float gainSmooth = 0.0f;
+
     float x = 0.0f;
     float x1[2] = {0.0f};
     float x2[2] = {0.0f};

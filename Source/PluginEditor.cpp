@@ -39,6 +39,13 @@ PhaseCrusherAudioProcessorEditor::PhaseCrusherAudioProcessorEditor (PhaseCrusher
     bitCrushSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 20, 20);
     bitCrushSlider.setRange(0, 1);
     addAndMakeVisible(bitCrushSlider);
+	
+	gainSlider.addListener(this);
+	gainSlider.setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+	gainSlider.setBounds(675, 200, 110, 110);
+	gainSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 20, 20);
+	gainSlider.setRange(0, 1, .001);
+	addAndMakeVisible(gainSlider);
     
     phaserButton.addListener(this);
     phaserButton.setButtonStyle(HackAudio::Button::SlidingToggle);
@@ -52,6 +59,8 @@ PhaseCrusherAudioProcessorEditor::PhaseCrusherAudioProcessorEditor (PhaseCrusher
 //    bitCrushButton.setState(juce::Button::ButtonState::buttonDown);
     addAndMakeVisible(bitCrushButton);
     
+    
+    startTimer(60);
 }
 
 PhaseCrusherAudioProcessorEditor::~PhaseCrusherAudioProcessorEditor()
@@ -87,6 +96,7 @@ void PhaseCrusherAudioProcessorEditor::paint (Graphics& g)
     g.setColour(Colours::crimson);
     g.drawFittedText("Bit Crush", 240, 400, 100, 30, Justification::centred, 1);
     g.drawFittedText("Bit Crush Toggle", 25, 340, 100, 100, Justification::centred, 1);
+	g.drawFittedText("Gain", 650, 280, 100, 100, Justification::centred, 1);
 
 }
 
@@ -100,33 +110,96 @@ void PhaseCrusherAudioProcessorEditor::resized()
 void PhaseCrusherAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
     if (slider == &phaseRateSlider) {
-        processor.phaseRate = phaseRateSlider.getValue();
+        *processor.phaseRate = phaseRateSlider.getValue();
         processor.updateAngleDelta();
     } else if (slider == &phaseDepthSlider) {
-        processor.phaseDepth = phaseDepthSlider.getValue();
+        *processor.phaseDepth = phaseDepthSlider.getValue();
     } else if (slider == &bitCrushSlider) {
-        processor.bitCrushAmt = bitCrushSlider.getValue();
-//        float bitRatio = bitCrushSlider.getValue() / 100;
-//        std::vector<float> range(250);
-//        for (float i = 5; i < 10; i+=.02) {
-//            range[i] = i;
-//        }
-//        float crushIndex = roundf(bitRatio * range.size());
-//        processor.bitCrushAmt = range[crushIndex];
-//        String message;
-//        message << "bit crush amt" + String(processor.bitCrushAmt) << newLine;
-//        Logger::getCurrentLogger()->writeToLog (message);
-    }
+        *processor.bitCrushAmt = bitCrushSlider.getValue();
+	} else if (slider == &gainSlider){
+		*processor.gainMultiplier = gainSlider.getValue();
+	}
 
-    
 }
 
 void PhaseCrusherAudioProcessorEditor::buttonClicked(Button* button)
 {
     // Toggle the effects
     if (button == &phaserButton) {
-        processor.isPhaserOn = !processor.isPhaserOn;
+        *processor.isPhaserOn = !*processor.isPhaserOn;
     } else if (button == &bitCrushButton) {
-        processor.isBitCrushOn = !processor.isBitCrushOn;
+        *processor.isBitCrushOn = !*processor.isBitCrushOn;
     }
 }
+
+void PhaseCrusherAudioProcessorEditor::timerCallback() {
+    
+    if (phaseRateSlider.getValue() != *processor.phaseRate) {
+        phaseRateSlider.setValue(*processor.phaseRate);
+    }
+    
+    if (phaseDepthSlider.getValue() != *processor.phaseDepth) {
+        phaseDepthSlider.setValue(*processor.phaseDepth);
+    }
+    
+    if (bitCrushSlider.getValue() != *processor.bitCrushAmt) {
+        bitCrushSlider.setValue(*processor.bitCrushAmt);
+    }
+    
+    if (phaserButton.getToggleState() != *processor.isPhaserOn) {
+        phaserButton.setToggleState(*processor.isPhaserOn, nil);
+    }
+    
+    if (bitCrushButton.getToggleState() != *processor.isBitCrushOn) {
+        bitCrushButton.setToggleState(*processor.isBitCrushOn, nil);
+    }
+	
+	if ( gainSlider.getValue() != *processor.gainMultiplier) {
+ 		gainSlider.setValue(*processor.gainMultiplier);
+	}
+	
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,6 +24,42 @@ PhaseCrusherAudioProcessor::PhaseCrusherAudioProcessor()
                        )
 #endif
 {
+    
+    addParameter(phaseRate = new AudioParameterFloat("phaseRate", // parameter ID
+                                                     "Phase Rate", //Name user sees
+                                                     0.01,
+                                                     10,
+                                                     0.01 ));
+    
+    addParameter(phaseDepth = new AudioParameterFloat("phaseDepth", // parameter ID
+                                                     "Phase Depth", //Name user sees
+                                                     0,
+                                                     1,
+                                                     0 ));
+    
+    addParameter(bitCrushAmt = new AudioParameterFloat("bitCrushAmount", // parameter ID
+                                                      "Bits to Crush", //Name user sees
+                                                      0,
+                                                      1,
+                                                      0 ));
+    
+    addParameter(isPhaserOn = new AudioParameterBool("isPhaseOn", // parameter ID
+                                                     "Phaser Toggle", //Name user sees
+                                                      false,
+                                                      "Phaser Toggle"));
+    
+    addParameter(isBitCrushOn = new AudioParameterBool("isBitCrushOn", // parameter ID
+                                                     "Bit Crush Toggle", //Name user sees
+                                                     false,
+                                                     "Bit Crush Toggle"));
+	
+	addParameter(gainMultiplier = new AudioParameterFloat("gainMultiplier", // parameter ID
+														  "Gain", //Name user sees
+														  0,
+														  1,
+														  0 ));
+	
+	gain = *gainMultiplier;
 }
 
 PhaseCrusherAudioProcessor::~PhaseCrusherAudioProcessor()
@@ -99,9 +135,6 @@ void PhaseCrusherAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     Fs = sampleRate;
-    updateAngleDelta();
-    isPhaserOn = false;
-    isBitCrushOn = false;
 }
 
 void PhaseCrusherAudioProcessor::releaseResources()
@@ -159,8 +192,14 @@ void PhaseCrusherAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
         
         for (int n = 0; n < buffer.getNumSamples(); ++n)
         {
+            updateAngleDelta();
             
             inputSample = buffer.getReadPointer(channel)[n];
+			
+			gain = (0.0001 * (*gainMultiplier)) + (0.9999 * gain);
+			
+			
+			inputSample = inputSample * gain;
 
             if (isPhaserOn) {
                 currentSineSample = sinf(currentAngle);
@@ -170,9 +209,10 @@ void PhaseCrusherAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
                     currentAngle -= (2 * float_Pi);
                 }
                 
-                currentSineSample = (currentSineSample * phaseDepth * 500) + offsetFrequency;
+                currentSineSample = (currentSineSample * *phaseDepth * 500) + offsetFrequency;
                 
                 x = inputSample;
+                
                 // Filtering
                 w0 = 2 * float_Pi * currentSineSample / Fs;
                 
@@ -200,8 +240,9 @@ void PhaseCrusherAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
             }
             
             if (isBitCrushOn) {
-                outputSample = bitCrush(outputSample, bitCrushAmt);
+                outputSample = bitCrush(outputSample, *bitCrushAmt);
             }
+			
             
             buffer.getWritePointer(channel)[n] = outputSample;
         }
@@ -230,7 +271,7 @@ float PhaseCrusherAudioProcessor::phase (AudioBuffer<float>& buffer, float input
 }
 
 void PhaseCrusherAudioProcessor::updateAngleDelta() {
-    angleDelta = ((phaseRate / Fs) * 2.0 * float_Pi);
+    angleDelta = ((*phaseRate / Fs) * 2.0 * float_Pi);
 }
 
 //==============================================================================
@@ -250,12 +291,37 @@ void PhaseCrusherAudioProcessor::getStateInformation (MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    
+    ScopedPointer<XmlElement> xml (new XmlElement ("PhaseCrusherParams"));
+    xml -> setAttribute("phaseDepth", (float) *phaseDepth);
+    xml -> setAttribute("phaseRate", (float) *phaseRate);
+    xml -> setAttribute("isPhaseOn", (float) *isPhaserOn);
+    xml -> setAttribute("bitCrushAmount", (float) *bitCrushAmt);
+    xml -> setAttribute("isBitCrushOn", (float) *isBitCrushOn);
+	xml -> setAttribute("gainMultiplier", (float) *gainMultiplier);
+    
+                        
+    
+    copyXmlToBinary(*xml, destData);
 }
 
 void PhaseCrusherAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    
+    ScopedPointer<XmlElement> xmlState (getXmlFromBinary(data, sizeInBytes));
+    
+    if (xmlState != nullptr) {
+        if (xmlState -> hasTagName("PhaseCrusherParams")) {
+            *phaseDepth = xmlState->getDoubleAttribute("phaseDepth");
+            *phaseRate = xmlState->getDoubleAttribute("phaseRate");
+            *isPhaserOn = xmlState->getDoubleAttribute("isPhaseOn");
+            *bitCrushAmt = xmlState->getDoubleAttribute("bitCrushAmt");
+            *isBitCrushOn = xmlState->getDoubleAttribute("isBitCrushOn");
+			*gainMultiplier = xmlState->getDoubleAttribute("gainMultiplier");
+        }
+    }
 }
 
 //==============================================================================
